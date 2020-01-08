@@ -1,11 +1,16 @@
-use rand::{Rng, distributions::{Standard, Distribution}};
 use crate::UniformRand;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 use std::{
     cmp::Ordering,
     io::{Read, Result as IoResult, Write},
     marker::PhantomData,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
+
+use num_traits::{One, Zero};
 
 use crate::{
     bytes::{FromBytes, ToBytes},
@@ -141,7 +146,10 @@ impl<P: Fp6Parameters> Fp6<P> {
     }
 }
 
-impl<P: Fp6Parameters> Field for Fp6<P> {
+impl_add!(Fp6, Fp6Parameters);
+impl_mul!(Fp6, Fp6Parameters);
+
+impl<P: Fp6Parameters> Zero for Fp6<P> {
     fn zero() -> Self {
         Self::new(Fp2::zero(), Fp2::zero(), Fp2::zero())
     }
@@ -149,7 +157,8 @@ impl<P: Fp6Parameters> Field for Fp6<P> {
     fn is_zero(&self) -> bool {
         self.c0.is_zero() && self.c1.is_zero() && self.c2.is_zero()
     }
-
+}
+impl<P: Fp6Parameters> One for Fp6<P> {
     fn one() -> Self {
         Self::new(Fp2::one(), Fp2::zero(), Fp2::zero())
     }
@@ -157,7 +166,9 @@ impl<P: Fp6Parameters> Field for Fp6<P> {
     fn is_one(&self) -> bool {
         self.c0.is_one() && self.c1.is_zero() && self.c2.is_zero()
     }
+}
 
+impl<P: Fp6Parameters> Field for Fp6<P> {
     #[inline]
     fn characteristic<'a>() -> &'a [u64] {
         Fp2::<P::Fp2Params>::characteristic()
@@ -271,10 +282,13 @@ impl<P: Fp6Parameters> std::fmt::Display for Fp6<P> {
 impl<P: Fp6Parameters> Distribution<Fp6<P>> for Standard {
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Fp6<P> {
-        Fp6::new(UniformRand::rand(rng), UniformRand::rand(rng), UniformRand::rand(rng))
+        Fp6::new(
+            UniformRand::rand(rng),
+            UniformRand::rand(rng),
+            UniformRand::rand(rng),
+        )
     }
 }
-
 
 impl<P: Fp6Parameters> Neg for Fp6<P> {
     type Output = Self;
@@ -439,8 +453,6 @@ impl<P: Fp6Parameters> From<u8> for Fp6<P> {
         Self::new(other.into(), Fp2::zero(), Fp2::zero())
     }
 }
-
-
 
 impl<P: Fp6Parameters> ToBytes for Fp6<P> {
     #[inline]

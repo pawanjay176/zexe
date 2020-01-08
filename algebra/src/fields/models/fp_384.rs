@@ -7,6 +7,8 @@ use std::{
     str::FromStr,
 };
 
+use num_traits::{One, Zero};
+
 use crate::{
     biginteger::{arithmetic as fa, BigInteger as _BigInteger, BigInteger384 as BigInteger},
     bytes::{FromBytes, ToBytes},
@@ -27,7 +29,6 @@ pub trait Fp384Parameters: FpParameters<BigInt = BigInteger> {}
 )]
 pub struct Fp384<P: Fp384Parameters>(
     pub BigInteger,
-
     #[derivative(Debug = "ignore")]
     #[doc(hidden)]
     pub PhantomData<P>,
@@ -142,16 +143,6 @@ impl<P: Fp384Parameters> Fp384<P> {
 
 impl<P: Fp384Parameters> Field for Fp384<P> {
     #[inline]
-    fn zero() -> Self {
-        Fp384::<P>(BigInteger::from(0), PhantomData)
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-
-    #[inline]
     fn double(&self) -> Self {
         let mut temp = *self;
         temp.double_in_place();
@@ -165,16 +156,6 @@ impl<P: Fp384Parameters> Field for Fp384<P> {
         // However, it may need to be reduced.
         self.reduce();
         self
-    }
-
-    #[inline]
-    fn one() -> Self {
-        Fp384::<P>(P::R, PhantomData)
-    }
-
-    #[inline]
-    fn is_one(&self) -> bool {
-        self.0 == P::R
     }
 
     #[inline]
@@ -426,6 +407,9 @@ impl<P: Fp384Parameters> PartialOrd for Fp384<P> {
     }
 }
 
+impl_zero!(Fp384, Fp384Parameters);
+impl_one!(Fp384, Fp384Parameters);
+
 impl_prime_field_from_int!(Fp384, u128, Fp384Parameters);
 impl_prime_field_from_int!(Fp384, u64, Fp384Parameters);
 impl_prime_field_from_int!(Fp384, u32, Fp384Parameters);
@@ -484,11 +468,11 @@ impl<P: Fp384Parameters> FromStr for Fp384<P> {
                     res.add_assign(&Self::from_repr(<Self as PrimeField>::BigInt::from(
                         u64::from(c),
                     )));
-                },
+                }
                 None => {
                     println!("Not valid digit!");
                     return Err(());
-                },
+                }
             }
         }
         if !res.is_valid() {

@@ -5,7 +5,12 @@ use std::{
     marker::PhantomData,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
-use rand::{Rng, distributions::{Standard, Distribution}};
+
+use num_traits::{One, Zero};
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 
 use crate::{
     bytes::{FromBytes, ToBytes},
@@ -70,7 +75,10 @@ impl<P: Fp2Parameters> Fp2<P> {
     }
 }
 
-impl<P: Fp2Parameters> Field for Fp2<P> {
+impl_add!(Fp2, Fp2Parameters);
+impl_mul!(Fp2, Fp2Parameters);
+
+impl<P: Fp2Parameters> Zero for Fp2<P> {
     fn zero() -> Self {
         Fp2::new(P::Fp::zero(), P::Fp::zero())
     }
@@ -78,7 +86,9 @@ impl<P: Fp2Parameters> Field for Fp2<P> {
     fn is_zero(&self) -> bool {
         self.c0.is_zero() && self.c1.is_zero()
     }
+}
 
+impl<P: Fp2Parameters> One for Fp2<P> {
     fn one() -> Self {
         Fp2::new(P::Fp::one(), P::Fp::zero())
     }
@@ -86,7 +96,9 @@ impl<P: Fp2Parameters> Field for Fp2<P> {
     fn is_one(&self) -> bool {
         self.c0.is_one() && self.c1.is_zero()
     }
+}
 
+impl<P: Fp2Parameters> Field for Fp2<P> {
     #[inline]
     fn characteristic<'a>() -> &'a [u64] {
         P::Fp::characteristic()
@@ -161,8 +173,9 @@ impl<P: Fp2Parameters> Field for Fp2<P> {
     }
 }
 
-impl<'a, P: Fp2Parameters> SquareRootField for Fp2<P> 
-where P::Fp: SquareRootField
+impl<'a, P: Fp2Parameters> SquareRootField for Fp2<P>
+where
+    P::Fp: SquareRootField,
 {
     fn legendre(&self) -> LegendreSymbol {
         self.norm().legendre()
@@ -194,7 +207,7 @@ where P::Fp: SquareRootField
                 let c0 = delta.sqrt().expect("Delta must have a square root");
                 let c0_inv = c0.inverse().expect("c0 must have an inverse");
                 Some(Self::new(c0, self.c1 * &two_inv * &c0_inv))
-            },
+            }
         }
     }
 

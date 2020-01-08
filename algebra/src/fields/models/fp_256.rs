@@ -1,3 +1,5 @@
+use num_traits::{One, Zero};
+
 use std::{
     cmp::{Ord, Ordering, PartialOrd},
     fmt::{Display, Formatter, Result as FmtResult},
@@ -27,7 +29,6 @@ pub trait Fp256Parameters: FpParameters<BigInt = BigInteger> {}
 )]
 pub struct Fp256<P>(
     pub BigInteger,
-
     #[derivative(Debug = "ignore")]
     #[doc(hidden)]
     pub PhantomData<P>,
@@ -108,16 +109,6 @@ impl<P: Fp256Parameters> Fp256<P> {
 
 impl<P: Fp256Parameters> Field for Fp256<P> {
     #[inline]
-    fn zero() -> Self {
-        Fp256::<P>(BigInteger::from(0), PhantomData)
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-
-    #[inline]
     fn double(&self) -> Self {
         let mut temp = *self;
         temp.double_in_place();
@@ -131,16 +122,6 @@ impl<P: Fp256Parameters> Field for Fp256<P> {
         // However, it may need to be reduced.
         self.reduce();
         self
-    }
-
-    #[inline]
-    fn one() -> Self {
-        Fp256::<P>(P::R, PhantomData)
-    }
-
-    #[inline]
-    fn is_one(&self) -> bool {
-        self == &Self::one()
     }
 
     #[inline]
@@ -353,6 +334,9 @@ impl<P: Fp256Parameters> SquareRootField for Fp256<P> {
     }
 }
 
+impl_zero!(Fp256, Fp256Parameters);
+impl_one!(Fp256, Fp256Parameters);
+
 impl_prime_field_from_int!(Fp256, u128, Fp256Parameters);
 impl_prime_field_from_int!(Fp256, u64, Fp256Parameters);
 impl_prime_field_from_int!(Fp256, u32, Fp256Parameters);
@@ -425,10 +409,10 @@ impl<P: Fp256Parameters> FromStr for Fp256<P> {
                     res.add_assign(&Self::from_repr(<Self as PrimeField>::BigInt::from(
                         u64::from(c),
                     )));
-                },
+                }
                 None => {
                     return Err(());
-                },
+                }
             }
         }
         if !res.is_valid() {

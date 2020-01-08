@@ -3,6 +3,8 @@ use crate::{
     bytes::{FromBytes, ToBytes},
     fields::{Field, FpParameters, LegendreSymbol, PrimeField, SquareRootField},
 };
+use num_traits::{One, Zero};
+
 use std::{
     cmp::{Ord, Ordering, PartialOrd},
     fmt::{Display, Formatter, Result as FmtResult},
@@ -26,7 +28,6 @@ pub trait Fp832Parameters: FpParameters<BigInt = BigInteger> {}
 )]
 pub struct Fp832<P: Fp832Parameters>(
     pub BigInteger,
-
     #[derivative(Debug = "ignore")]
     #[doc(hidden)]
     pub PhantomData<P>,
@@ -318,16 +319,6 @@ impl<P: Fp832Parameters> Fp832<P> {
 
 impl<P: Fp832Parameters> Field for Fp832<P> {
     #[inline]
-    fn zero() -> Self {
-        Fp832::<P>(BigInteger::from(0), PhantomData)
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-
-    #[inline]
     fn double(&self) -> Self {
         let mut temp = *self;
         temp.double_in_place();
@@ -341,16 +332,6 @@ impl<P: Fp832Parameters> Field for Fp832<P> {
         // However, it may need to be reduced.
         self.reduce();
         self
-    }
-
-    #[inline]
-    fn one() -> Self {
-        Fp832::<P>(P::R, PhantomData)
-    }
-
-    #[inline]
-    fn is_one(&self) -> bool {
-        self.0 == P::R
     }
 
     #[inline]
@@ -724,6 +705,9 @@ impl<P: Fp832Parameters> PartialOrd for Fp832<P> {
     }
 }
 
+impl_zero!(Fp832, Fp832Parameters);
+impl_one!(Fp832, Fp832Parameters);
+
 impl_prime_field_from_int!(Fp832, u128, Fp832Parameters);
 impl_prime_field_from_int!(Fp832, u64, Fp832Parameters);
 impl_prime_field_from_int!(Fp832, u32, Fp832Parameters);
@@ -782,11 +766,11 @@ impl<P: Fp832Parameters> FromStr for Fp832<P> {
                     res.add_assign(&Self::from_repr(<Self as PrimeField>::BigInt::from(
                         u64::from(c),
                     )));
-                },
+                }
                 None => {
                     println!("Not valid digit!");
                     return Err(());
-                },
+                }
             }
         }
         if !res.is_valid() {

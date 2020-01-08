@@ -3,6 +3,7 @@ use crate::{
     bytes::{FromBytes, ToBytes},
     UniformRand,
 };
+use num_traits::identities::{One, Zero};
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
@@ -30,8 +31,8 @@ pub use self::models::*;
 macro_rules! field_new {
     ($name:ident, $c0:expr) => {
         $name {
-            0: $c0, 
-            1: std::marker::PhantomData
+            0: $c0,
+            1: std::marker::PhantomData,
         }
     };
     ($name:ident, $c0:expr, $c1:expr $(,)?) => {
@@ -69,6 +70,8 @@ pub trait Field:
     + UniformRand
     + Sized
     + Hash
+    + Zero
+    + One
     + From<u128>
     + From<u64>
     + From<u32>
@@ -83,18 +86,6 @@ pub trait Field:
     + for<'a> MulAssign<&'a Self>
     + for<'a> DivAssign<&'a Self>
 {
-    /// Returns the zero element of the field, the additive identity.
-    fn zero() -> Self;
-
-    /// Returns true if and only if `self == Self::zero()`.
-    fn is_zero(&self) -> bool;
-
-    /// Returns the one element of the field, a field generator.
-    fn one() -> Self;
-
-    /// Returns true if and only if `self == Self::one()`.
-    fn is_one(&self) -> bool;
-
     /// Returns the characteristic of the field.
     fn characteristic<'a>() -> &'a [u64];
 

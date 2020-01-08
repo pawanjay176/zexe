@@ -7,6 +7,8 @@ use std::{
     str::FromStr,
 };
 
+use num_traits::{One, Zero};
+
 use crate::{
     biginteger::{arithmetic as fa, BigInteger as _BigInteger, BigInteger768 as BigInteger},
     bytes::{FromBytes, ToBytes},
@@ -27,7 +29,6 @@ pub trait Fp768Parameters: FpParameters<BigInt = BigInteger> {}
 )]
 pub struct Fp768<P: Fp768Parameters>(
     pub BigInteger,
-
     #[derivative(Debug = "ignore")]
     #[doc(hidden)]
     pub PhantomData<P>,
@@ -287,16 +288,6 @@ impl<P: Fp768Parameters> Fp768<P> {
 
 impl<P: Fp768Parameters> Field for Fp768<P> {
     #[inline]
-    fn zero() -> Self {
-        Fp768::<P>(BigInteger::from(0), PhantomData)
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-
-    #[inline]
     fn double(&self) -> Self {
         let mut temp = *self;
         temp.double_in_place();
@@ -310,16 +301,6 @@ impl<P: Fp768Parameters> Field for Fp768<P> {
         // However, it may need to be reduced.
         self.reduce();
         self
-    }
-
-    #[inline]
-    fn one() -> Self {
-        Fp768::<P>(P::R, PhantomData)
-    }
-
-    #[inline]
-    fn is_one(&self) -> bool {
-        self.0 == P::R
     }
 
     #[inline]
@@ -756,6 +737,9 @@ impl<P: Fp768Parameters> PartialOrd for Fp768<P> {
     }
 }
 
+impl_zero!(Fp768, Fp768Parameters);
+impl_one!(Fp768, Fp768Parameters);
+
 impl_prime_field_from_int!(Fp768, u128, Fp768Parameters);
 impl_prime_field_from_int!(Fp768, u64, Fp768Parameters);
 impl_prime_field_from_int!(Fp768, u32, Fp768Parameters);
@@ -814,11 +798,11 @@ impl<P: Fp768Parameters> FromStr for Fp768<P> {
                     res.add_assign(&Self::from_repr(<Self as PrimeField>::BigInt::from(
                         u64::from(c),
                     )));
-                },
+                }
                 None => {
                     println!("Not valid digit!");
                     return Err(());
-                },
+                }
             }
         }
         if !res.is_valid() {

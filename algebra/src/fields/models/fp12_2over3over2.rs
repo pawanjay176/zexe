@@ -1,5 +1,10 @@
-use rand::{Rng, distributions::{Standard, Distribution}};
 use crate::UniformRand;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
+
+use num_traits::{One, Zero};
 use std::{
     cmp::Ordering,
     io::{Read, Result as IoResult, Write},
@@ -216,23 +221,29 @@ impl<P: Fp12Parameters> Distribution<Fp12<P>> for Standard {
     }
 }
 
-impl<P: Fp12Parameters> Field for Fp12<P> {
+impl_add!(Fp12, Fp12Parameters);
+impl_mul!(Fp12, Fp12Parameters);
+
+impl<P: Fp12Parameters> Zero for Fp12<P> {
     fn zero() -> Self {
         Self::new(Fp6::zero(), Fp6::zero())
-    }
-
-    fn one() -> Self {
-        Self::new(Fp6::one(), Fp6::zero())
     }
 
     fn is_zero(&self) -> bool {
         self.c0.is_zero() && self.c1.is_zero()
     }
+}
+impl<P: Fp12Parameters> One for Fp12<P> {
+    fn one() -> Self {
+        Self::new(Fp6::one(), Fp6::zero())
+    }
 
     fn is_one(&self) -> bool {
         self.c0.is_one() && self.c1.is_zero()
     }
+}
 
+impl<P: Fp12Parameters> Field for Fp12<P> {
     #[inline]
     fn characteristic<'a>() -> &'a [u64] {
         Fp6::<P::Fp6Params>::characteristic()
@@ -311,10 +322,10 @@ impl<P: Fp12Parameters> Field for Fp12<P> {
     }
 
     fn inverse_in_place(&mut self) -> Option<&mut Self> {
-        self.inverse().and_then(|inv| { {
-                *self = inv;
-                Some(self)
-            } })
+        self.inverse().and_then(|inv| {
+            *self = inv;
+            Some(self)
+        })
     }
 }
 
@@ -425,7 +436,6 @@ impl<P: Fp12Parameters> PartialOrd for Fp12<P> {
         Some(self.cmp(other))
     }
 }
-
 
 impl<P: Fp12Parameters> From<u128> for Fp12<P> {
     fn from(other: u128) -> Self {

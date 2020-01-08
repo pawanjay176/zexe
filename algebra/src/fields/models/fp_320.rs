@@ -7,6 +7,8 @@ use std::{
     str::FromStr,
 };
 
+use num_traits::{One, Zero};
+
 use crate::{
     biginteger::{arithmetic as fa, BigInteger as _BigInteger, BigInteger320 as BigInteger},
     bytes::{FromBytes, ToBytes},
@@ -27,7 +29,6 @@ pub trait Fp320Parameters: FpParameters<BigInt = BigInteger> {}
 )]
 pub struct Fp320<P: Fp320Parameters>(
     pub BigInteger,
-
     #[derivative(Debug = "ignore")]
     #[doc(hidden)]
     pub PhantomData<P>,
@@ -124,16 +125,6 @@ impl<P: Fp320Parameters> Fp320<P> {
 
 impl<P: Fp320Parameters> Field for Fp320<P> {
     #[inline]
-    fn zero() -> Self {
-        Fp320::<P>(BigInteger::from(0), PhantomData)
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-
-    #[inline]
     fn double(&self) -> Self {
         let mut temp = *self;
         temp.double_in_place();
@@ -147,16 +138,6 @@ impl<P: Fp320Parameters> Field for Fp320<P> {
         // However, it may need to be reduced.
         self.reduce();
         self
-    }
-
-    #[inline]
-    fn one() -> Self {
-        Fp320::<P>(P::R, PhantomData)
-    }
-
-    #[inline]
-    fn is_one(&self) -> bool {
-        self.0 == P::R
     }
 
     #[inline]
@@ -394,6 +375,9 @@ impl<P: Fp320Parameters> PartialOrd for Fp320<P> {
     }
 }
 
+impl_zero!(Fp320, Fp320Parameters);
+impl_one!(Fp320, Fp320Parameters);
+
 impl_prime_field_from_int!(Fp320, u128, Fp320Parameters);
 impl_prime_field_from_int!(Fp320, u64, Fp320Parameters);
 impl_prime_field_from_int!(Fp320, u32, Fp320Parameters);
@@ -452,11 +436,11 @@ impl<P: Fp320Parameters> FromStr for Fp320<P> {
                     res.add_assign(&Self::from_repr(<Self as PrimeField>::BigInt::from(
                         u64::from(c),
                     )));
-                },
+                }
                 None => {
                     println!("Not valid digit!");
                     return Err(());
-                },
+                }
             }
         }
         if !res.is_valid() {
