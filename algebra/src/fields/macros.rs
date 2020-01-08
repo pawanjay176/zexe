@@ -10,13 +10,18 @@ macro_rules! impl_field_into_bigint {
 
 macro_rules! impl_prime_field_standard_sample {
     ($field: ident, $params: ident) => {
-        impl<P: $params> rand::distributions::Distribution<$field<P>> for rand::distributions::Standard {
+        impl<P: $params> rand::distributions::Distribution<$field<P>>
+            for rand::distributions::Standard
+        {
             #[inline]
             fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> $field<P> {
                 loop {
                     let mut tmp = $field(rng.sample(rand::distributions::Standard), PhantomData);
                     // Mask away the unused bits at the beginning.
-                    tmp.0.as_mut().last_mut().map(|val| *val &= std::u64::MAX >> P::REPR_SHAVE_BITS);
+                    tmp.0
+                        .as_mut()
+                        .last_mut()
+                        .map(|val| *val &= std::u64::MAX >> P::REPR_SHAVE_BITS);
 
                     if tmp.is_valid() {
                         return tmp;
@@ -101,7 +106,63 @@ macro_rules! sqrt_impl {
                 }
 
                 Some(x)
-            },
+            }
         }
     }};
+}
+macro_rules! impl_add {
+    ($field: ident, $params: ident) => {
+        impl<P: $params> Add<$field<P>> for $field<P> {
+            type Output = $field<P>;
+
+            #[inline]
+            fn add(self, other: $field<P>) -> $field<P> {
+                let mut result = self;
+                result.add(&other);
+                result
+            }
+        }
+    };
+}
+
+macro_rules! impl_mul {
+    ($field: ident, $params: ident) => {
+        impl<P: $params> Mul<$field<P>> for $field<P> {
+            type Output = $field<P>;
+
+            #[inline]
+            fn mul(self, other: $field<P>) -> $field<P> {
+                let mut result = self;
+                result.mul(&other);
+                result
+            }
+        }
+    };
+}
+macro_rules! impl_zero {
+    ($field: ident, $params: ident) => {
+        impl_add!($field, $params);
+
+        impl<P: $params> Zero for $field<P> {
+            fn zero() -> $field<P> {
+                $field::<P>(BigInteger::from(0), PhantomData)
+            }
+
+            fn is_zero(&self) -> bool {
+                *self == $field::zero()
+            }
+        }
+    };
+}
+
+macro_rules! impl_one {
+    ($field: ident, $params: ident) => {
+        impl_mul!($field, $params);
+
+        impl<P: $params> One for $field<P> {
+            fn one() -> $field<P> {
+                $field::<P>(P::R, PhantomData)
+            }
+        }
+    };
 }
